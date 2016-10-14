@@ -8,6 +8,7 @@ var vinylPaths = require('vinyl-paths');
 var parsePath  = require('parse-filepath');
 var publicPath  = Elixir.config.publicPath;
 var revReplace = require('gulp-rev-replace');
+var debug = require('gulp-debug');
 
 
 /*
@@ -21,40 +22,56 @@ var revReplace = require('gulp-rev-replace');
  |
  */
 
+var isVersioning = false
 Elixir.extend('version', function(src, buildPath) {
     var paths = prepGulpPaths(src, buildPath);
 
     new Elixir.Task('version', function() {
-        var files = vinylPaths();
-        var manifest = paths.output.baseDir + '/rev-manifest.json';
+        if (isVersioning) {
+            console.log('**********************************************')
+            console.log('|    ----==== VERSION DUPLICATED ====----    |')
+            console.log('**********************************************')
+            return gulp.src('')
+        } else {
+            isVersioning = true
 
-        this.log(paths.src, paths.output);
+            var files = vinylPaths();
+            var manifest = paths.output.baseDir + '/rev-manifest.json';
 
-        emptyBuildPathFiles(paths.output.baseDir, manifest);
+            this.log(paths.src, paths.output);
 
-        // We need to remove the publicPath from the output base to get the
-        // correct prefix path.
-        var filePathPrefix = paths.output.baseDir.replace(publicPath, '') + '/';
+            emptyBuildPathFiles(paths.output.baseDir, manifest);
 
-        return (
-            gulp.src(paths.src.path, { base: './' + publicPath })
-            .pipe(gulp.dest(paths.output.baseDir))
-            .pipe(files)
-            .pipe(rev())
-            .pipe(revReplace({prefix: filePathPrefix}))
-            .pipe(gulp.dest(paths.output.baseDir))
-            .pipe(rev.manifest())
-            .pipe(gulp.dest(paths.output.baseDir))
-            .on('end', function() {
-                // We'll get rid of the duplicated file that
-                // usually gets put in the "build" folder,
-                // alongside the suffixed version.
-                del(files.paths, { force: true });
+            // We need to remove the publicPath from the output base to get the
+            // correct prefix path.
+            var filePathPrefix = paths.output.baseDir.replace(publicPath, '') + '/';
+            
+            return (
+                gulp.src(paths.src.path, { base: './' + publicPath })
+                .pipe(debug({title: 'unicorn:'}))
+                .pipe(gulp.dest(paths.output.baseDir))
+                .pipe(files)
+                .pipe(rev())
+                .pipe(revReplace({prefix: filePathPrefix}))
+                .pipe(gulp.dest(paths.output.baseDir))
+                .pipe(rev.manifest())
+                .pipe(gulp.dest(paths.output.baseDir))
+                .on('end', function() {
+                    console.log('version.onend')
 
-                // We'll also copy over relevant sourcemap files.
-                copyMaps(paths.src.path, paths.output.baseDir);
-            })
-        );
+                    // We'll get rid of the duplicated file that
+                    // usually gets put in the "build" folder,
+                    // alongside the suffixed version.
+                    del(files.paths, { force: true });
+
+                    // We'll also copy over relevant sourcemap files.
+                    copyMaps(paths.src.path, paths.output.baseDir);
+
+                    isVersioning = false
+                    console.log('version.onend over')
+                })
+            );
+        }
     })
     .watch(paths.src.path);
 });
