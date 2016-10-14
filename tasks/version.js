@@ -48,7 +48,7 @@ Elixir.extend('version', function(src, buildPath) {
             
             return (
                 gulp.src(paths.src.path, { base: './' + publicPath })
-                .pipe(debug({title: 'unicorn:'}))
+                .pipe(debug({title: 'version:'}))
                 .pipe(gulp.dest(paths.output.baseDir))
                 .pipe(files)
                 .pipe(rev())
@@ -57,7 +57,7 @@ Elixir.extend('version', function(src, buildPath) {
                 .pipe(rev.manifest())
                 .pipe(gulp.dest(paths.output.baseDir))
                 .on('end', function() {
-                    console.log('version.onend')
+                    console.log('version.onEnd')
 
                     // We'll get rid of the duplicated file that
                     // usually gets put in the "build" folder,
@@ -68,7 +68,8 @@ Elixir.extend('version', function(src, buildPath) {
                     copyMaps(paths.src.path, paths.output.baseDir);
 
                     isVersioning = false
-                    console.log('version.onend over')
+
+                    console.log('version.onEnd over')
                 })
             );
         }
